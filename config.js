@@ -1,8 +1,13 @@
 module.exports = {
   // Project information
+  name: 'Ecoquerai YouTube Video to MP3',
   author: 'Matias Troncoso Campos',
   organization: 'Ecoquerai Team',
   version: '1.1.0',
+  social: {
+    ecoquerai: 'https://www.instagram.com/ecoquerai/',
+    saitam_jk: 'https://www.instagram.com/saitam_jk/'
+  },
   
   // Server configuration
   port: process.env.PORT || 3000,

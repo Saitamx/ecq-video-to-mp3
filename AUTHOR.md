@@ -28,7 +28,12 @@ Para más información sobre el proyecto o colaboraciones:
 
 - **Email:** [Contacto a través de Ecoquerai]
 - **Organización:** Ecoquerai Team
-- **Proyecto:** ECQ Video to MP3 Converter
+- **Proyecto:** Ecoquerai YouTube Video to MP3
+
+### 📱 Redes Sociales
+
+- **Instagram Ecoquerai:** [@ecoquerai](https://www.instagram.com/ecoquerai/)
+- **Instagram Personal:** [@saitam_jk](https://www.instagram.com/saitam_jk/)
 
 ### 📄 Licencia
 

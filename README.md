@@ -1,6 +1,6 @@
-# ECQ Video to MP3 Converter
+# Ecoquerai YouTube Video to MP3
 
-Un servicio web para convertir videos de YouTube a formato MP3 usando Node.js.
+Un servicio web para convertir videos de YouTube a formato MP3 usando Node.js, desarrollado por **Matias Troncoso Campos** del equipo **Ecoquerai**.
 
 ## 🚀 Características
 

@@ -37,10 +37,14 @@ app.get('/health', (req, res) => {
 // Routes
 app.get('/', (req, res) => {
   res.json({
-    message: 'ECQ Video to MP3 Converter API',
+    message: 'Ecoquerai YouTube Video to MP3 API',
     version: '1.1.0',
     author: 'Matias Troncoso Campos',
     organization: 'Ecoquerai Team',
+    social: {
+      ecoquerai: 'https://www.instagram.com/ecoquerai/',
+      saitam_jk: 'https://www.instagram.com/saitam_jk/'
+    },
     endpoints: {
       health: 'GET /health',
       convert: 'POST /convert',
