@@ -5,6 +5,37 @@ const fs = require('fs-extra');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
+// Rotación de User-Agents para evitar detección
+const userAgents = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0'
+];
+
+// Cookies de YouTube para simular sesión real
+const youtubeCookies = [
+  'CONSENT=YES+cb.20231231-07-p0.es+FX+{}',
+  'VISITOR_INFO1_LIVE=random_string',
+  'LOGIN_INFO=random_string',
+  'SID=random_string',
+  'HSID=random_string',
+  'SSID=random_string',
+  'APISID=random_string',
+  'SAPISID=random_string',
+  '__Secure-1PSID=random_string',
+  '__Secure-3PSID=random_string'
+];
+
+function getRandomUserAgent() {
+  return userAgents[Math.floor(Math.random() * userAgents.length)];
+}
+
+function getRandomCookies() {
+  return youtubeCookies[Math.floor(Math.random() * youtubeCookies.length)];
+}
+
 const app = express();
 
 // Middleware
@@ -78,12 +109,22 @@ app.post('/api/diagnose', async (req, res) => {
       };
     }
     
-    // Test 3: Info with headers
+    // Test 3: Info with advanced headers
     try {
       const infoWithHeaders = await ytdl.getInfo(url, {
         requestOptions: {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'User-Agent': getRandomUserAgent(),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'max-age=0'
           }
         }
       });
@@ -121,6 +162,114 @@ app.post('/api/diagnose', async (req, res) => {
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: 'Diagnosis failed', details: error.message });
+  }
+});
+
+// Advanced test endpoint with multiple strategies
+app.post('/api/test-advanced', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+    
+    const results = {
+      url: url,
+      timestamp: new Date().toISOString(),
+      strategies: []
+    };
+    
+    // Strategy 1: Basic validation
+    try {
+      const isValid = ytdl.validateURL(url);
+      results.strategies.push({
+        name: 'Basic Validation',
+        success: isValid,
+        message: isValid ? 'URL is valid' : 'URL is invalid'
+      });
+    } catch (error) {
+      results.strategies.push({
+        name: 'Basic Validation',
+        success: false,
+        error: error.message
+      });
+    }
+    
+    // Strategy 2: Simple getInfo
+    try {
+      const info = await ytdl.getInfo(url);
+      results.strategies.push({
+        name: 'Simple getInfo',
+        success: true,
+        title: info.videoDetails?.title || 'Unknown'
+      });
+    } catch (error) {
+      results.strategies.push({
+        name: 'Simple getInfo',
+        success: false,
+        error: error.message
+      });
+    }
+    
+    // Strategy 3: With User-Agent rotation
+    try {
+      const info = await ytdl.getInfo(url, {
+        requestOptions: {
+          headers: {
+            'User-Agent': getRandomUserAgent()
+          }
+        }
+      });
+      results.strategies.push({
+        name: 'User-Agent Rotation',
+        success: true,
+        title: info.videoDetails?.title || 'Unknown'
+      });
+    } catch (error) {
+      results.strategies.push({
+        name: 'User-Agent Rotation',
+        success: false,
+        error: error.message
+      });
+    }
+    
+    // Strategy 4: With full headers
+    try {
+      const info = await ytdl.getInfo(url, {
+        requestOptions: {
+          headers: {
+            'User-Agent': getRandomUserAgent(),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'max-age=0',
+            'Cookie': getRandomCookies()
+          }
+        }
+      });
+      results.strategies.push({
+        name: 'Full Headers',
+        success: true,
+        title: info.videoDetails?.title || 'Unknown'
+      });
+    } catch (error) {
+      results.strategies.push({
+        name: 'Full Headers',
+        success: false,
+        error: error.message
+      });
+    }
+    
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: 'Advanced test failed', details: error.message });
   }
 });
 
@@ -183,43 +332,66 @@ app.post('/api/convert', async (req, res) => {
 
     console.log(`Processing URL: ${url}`);
 
-    // Get video info with simplified approach
+    // Get video info with advanced anti-detection
     let videoInfo;
-    try {
-      videoInfo = await ytdl.getInfo(url);
-    } catch (infoError) {
-      console.error('Error getting video info:', infoError);
-      
-      // Try with minimal headers
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
       try {
-        videoInfo = await ytdl.getInfo(url, {
-          requestOptions: {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-          }
-        });
-      } catch (retryError) {
-        console.error('Retry failed:', retryError);
+        attempts++;
+        console.log(`Attempt ${attempts} to get video info...`);
         
-        // Provide specific error messages
-        let errorMessage = 'Could not fetch video information.';
-        if (infoError.message.includes('Video unavailable')) {
-          errorMessage = 'This video is unavailable or private.';
-        } else if (infoError.message.includes('Sign in')) {
-          errorMessage = 'This video requires authentication.';
-        } else if (infoError.message.includes('restricted')) {
-          errorMessage = 'This video is restricted in your region.';
-        } else if (infoError.message.includes('copyright')) {
-          errorMessage = 'This video has copyright restrictions.';
+        const headers = {
+          'User-Agent': getRandomUserAgent(),
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0',
+          'Cookie': getRandomCookies()
+        };
+        
+        videoInfo = await ytdl.getInfo(url, {
+          requestOptions: { headers }
+        });
+        
+        console.log(`Success on attempt ${attempts}`);
+        break;
+        
+      } catch (infoError) {
+        console.error(`Attempt ${attempts} failed:`, infoError.message);
+        
+        if (attempts === maxAttempts) {
+          // All attempts failed
+          let errorMessage = 'Could not fetch video information after multiple attempts.';
+          if (infoError.message.includes('Video unavailable')) {
+            errorMessage = 'This video is unavailable or private.';
+          } else if (infoError.message.includes('Sign in')) {
+            errorMessage = 'This video requires authentication.';
+          } else if (infoError.message.includes('restricted')) {
+            errorMessage = 'This video is restricted in your region.';
+          } else if (infoError.message.includes('copyright')) {
+            errorMessage = 'This video has copyright restrictions.';
+          } else if (infoError.message.includes('410')) {
+            errorMessage = 'YouTube is blocking requests. Please try again later.';
+          }
+          
+          return res.status(400).json({ 
+            error: errorMessage,
+            details: infoError.message,
+            attempts: attempts,
+            suggestion: 'YouTube may be temporarily blocking requests. Try again in a few minutes or use a different video.'
+          });
         }
         
-        return res.status(400).json({ 
-          error: errorMessage,
-          details: infoError.message,
-          retryError: retryError.message,
-          suggestion: 'Try a different YouTube video or check if the video is publicly available.'
-        });
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
       }
     }
 
@@ -247,19 +419,24 @@ app.post('/api/convert', async (req, res) => {
 
     console.log(`Starting download for: ${videoTitle} (ID: ${videoId})`);
 
-    // Create download stream with headers
+    // Create download stream with advanced headers
     const stream = ytdl(url, {
       quality: quality,
       filter: 'audioonly',
       requestOptions: {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': getRandomUserAgent(),
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
           'Accept-Encoding': 'gzip, deflate',
           'DNT': '1',
           'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1'
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0',
+          'Cookie': getRandomCookies()
         }
       }
     });
