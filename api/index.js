@@ -27,7 +27,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    platform: 'Vercel'
   });
 });
 
@@ -38,6 +39,7 @@ app.get('/api', (req, res) => {
     version: '1.2.0',
     author: 'Matias Troncoso Campos',
     organization: 'Ecoquerai Team',
+    platform: 'Vercel',
     social: {
       ecoquerai: 'https://www.instagram.com/ecoquerai/',
       saitam_jk: 'https://www.instagram.com/saitam_jk/'
@@ -52,7 +54,7 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Convert YouTube URL to MP3
+// Convert YouTube URL to Audio (direct download)
 app.post('/api/convert', async (req, res) => {
   try {
     const { url, quality = 'highestaudio' } = req.body;
@@ -88,93 +90,21 @@ app.post('/api/convert', async (req, res) => {
     const videoTitle = videoInfo.videoDetails.title.replace(/[^\w\s-]/g, '');
     const videoId = videoInfo.videoDetails.videoId;
     
-    // Generate unique filename
+    // Get the best audio format available
+    const formats = ytdl.filterFormats(videoInfo.formats, 'audioonly');
+    const bestFormat = formats[0];
+
+    if (!bestFormat) {
+      return res.status(500).json({ error: 'No audio format available for this video' });
+    }
+
+    // Generate unique filename with original extension
     const timestamp = Date.now();
-    const filename = `${videoTitle}_${timestamp}.mp3`;
-    const outputPath = path.join(downloadsDir, filename);
-
-    console.log(`Starting conversion for: ${videoTitle} (ID: ${videoId})`);
-
-    // Get the best audio format available
-    const formats = ytdl.filterFormats(videoInfo.formats, 'audioonly');
-    const bestFormat = formats[0];
-
-    if (!bestFormat) {
-      return res.status(500).json({ error: 'No audio format available for this video' });
-    }
-
-    // Generate unique filename with original extension
     const extension = bestFormat.container || 'm4a';
     const filename = `${videoTitle}_${timestamp}.${extension}`;
     const outputPath = path.join(downloadsDir, filename);
 
-    // Create download stream
-    const stream = ytdl(url, {
-      quality: quality,
-      filter: 'audioonly'
-    });
-
-    // Create write stream
-    const writeStream = fs.createWriteStream(outputPath);
-
-    // Handle stream errors
-    stream.on('error', (streamError) => {
-      console.error('Video stream error:', streamError);
-      if (!res.headersSent) {
-        res.status(500).json({ 
-          error: 'Error downloading video stream',
-          details: streamError.message 
-        });
-      }
-    });
-
-    writeStream.on('error', (writeError) => {
-      console.error('Write stream error:', writeError);
-      if (!res.headersSent) {
-        res.status(500).json({ 
-          error: 'Error writing file',
-          details: writeError.message 
-        });
-      }
-    });
-
-    // Pipe the stream to file
-    stream.pipe(writeStream);
-
-    writeStream.on('finish', () => {
-      console.log('Download completed successfully');
-      
-      // Get file stats
-      const stats = fs.statSync(outputPath);
-      const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
-
-      res.json({
-        success: true,
-        message: 'Video downloaded successfully',
-        filename: filename,
-        downloadUrl: `/api/download/${filename}`,
-        videoTitle: videoTitle,
-        duration: videoInfo.videoDetails.lengthSeconds,
-        fileSize: `${fileSizeInMB} MB`,
-        format: bestFormat.container || 'audio',
-        quality: bestFormat.audioBitrate ? `${bestFormat.audioBitrate}kbps` : 'Unknown',
-        platform: 'Vercel',
-        note: 'Direct audio download - no conversion required'
-      });
-    });
-
-    // Get the best audio format available
-    const formats = ytdl.filterFormats(videoInfo.formats, 'audioonly');
-    const bestFormat = formats[0];
-
-    if (!bestFormat) {
-      return res.status(500).json({ error: 'No audio format available for this video' });
-    }
-
-    // Generate unique filename with original extension
-    const extension = bestFormat.container || 'm4a';
-    const filename = `${videoTitle}_${timestamp}.${extension}`;
-    const outputPath = path.join(downloadsDir, filename);
+    console.log(`Starting download for: ${videoTitle} (ID: ${videoId})`);
 
     // Create download stream
     const stream = ytdl(url, {
@@ -233,17 +163,18 @@ app.post('/api/convert', async (req, res) => {
 
   } catch (error) {
     console.error('Unexpected error:', error);
-    res.status(500).json({ 
-      error: 'Unexpected server error', 
-      details: error.message 
-    });
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Unexpected server error', 
+        details: error.message 
+      });
+    }
   }
 });
 
 // Get conversion status (for future async processing)
 app.get('/api/status/:id', (req, res) => {
   const { id } = req.params;
-  // This could be implemented with a job queue system
   res.json({ status: 'completed', id });
 });
 
