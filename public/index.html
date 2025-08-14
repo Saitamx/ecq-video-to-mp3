@@ -494,7 +494,11 @@
             showStatus('Iniciando conversión...', 'loading');
 
                          try {
-                 const response = await fetch('/convert', {
+                                        // Detect if we're on local or Vercel
+                       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                       const apiUrl = isLocal ? '/convert' : '/api/convert';
+                       
+                       const response = await fetch(apiUrl, {
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json',

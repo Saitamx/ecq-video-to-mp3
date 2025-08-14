@@ -1,0 +1,36 @@
+{
+  "name": "ecq-video-to-mp3",
+  "version": "1.2.0",
+  "description": "YouTube video to MP3 audio extractor",
+  "main": "railway-server.js",
+  "scripts": {
+    "start": "node railway-server.js",
+    "dev": "nodemon railway-server.js",
+    "test": "node test.js",
+    "test-api": "node test-api.js"
+  },
+  "keywords": [
+    "youtube",
+    "mp3",
+    "audio",
+    "extractor",
+    "download"
+  ],
+  "author": "Matias Troncoso Campos - Ecoquerai Team",
+  "license": "MIT",
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "fluent-ffmpeg": "^2.1.3",
+    "fs-extra": "^11.1.1",
+    "node-fetch": "^2.7.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
