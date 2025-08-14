@@ -28,8 +28,31 @@ app.get('/api/health', (req, res) => {
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    platform: 'Vercel'
+    platform: 'Vercel',
+    ytdl: 'Available',
+    note: 'API is running correctly'
   });
+});
+
+// Test endpoint for YouTube URL validation
+app.post('/api/test', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+    
+    const isValid = ytdl.validateURL(url);
+    
+    res.json({
+      url: url,
+      isValid: isValid,
+      message: isValid ? 'URL is valid' : 'URL is invalid'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Test failed', details: error.message });
+  }
 });
 
 // Routes
@@ -70,15 +93,41 @@ app.post('/api/convert', async (req, res) => {
 
     console.log(`Processing URL: ${url}`);
 
-    // Get video info with better error handling
+    // Get video info with better error handling and headers
     let videoInfo;
     try {
-      videoInfo = await ytdl.getInfo(url);
+      videoInfo = await ytdl.getInfo(url, {
+        requestOptions: {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
+          }
+        }
+      });
     } catch (infoError) {
       console.error('Error getting video info:', infoError);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Could not fetch video information.';
+      if (infoError.message.includes('Video unavailable')) {
+        errorMessage = 'This video is unavailable or private.';
+      } else if (infoError.message.includes('Sign in')) {
+        errorMessage = 'This video requires authentication.';
+      } else if (infoError.message.includes('restricted')) {
+        errorMessage = 'This video is restricted in your region.';
+      } else if (infoError.message.includes('copyright')) {
+        errorMessage = 'This video has copyright restrictions.';
+      }
+      
       return res.status(400).json({ 
-        error: 'Could not fetch video information. The video might be private, restricted, or unavailable.',
-        details: infoError.message 
+        error: errorMessage,
+        details: infoError.message,
+        suggestion: 'Try a different YouTube video or check if the video is publicly available.'
       });
     }
 
@@ -106,10 +155,21 @@ app.post('/api/convert', async (req, res) => {
 
     console.log(`Starting download for: ${videoTitle} (ID: ${videoId})`);
 
-    // Create download stream
+    // Create download stream with headers
     const stream = ytdl(url, {
       quality: quality,
-      filter: 'audioonly'
+      filter: 'audioonly',
+      requestOptions: {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1'
+        }
+      }
     });
 
     // Create write stream
