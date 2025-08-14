@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const ytdl = require('@distube/ytdl-core');
-const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs-extra');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -25,26 +24,26 @@ fs.ensureDirSync(tempDir);
 app.use('/downloads', express.static(downloadsDir));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Health check endpoint for Railway
+// Health check endpoint
 app.get('/health', (req, res) => {
-     res.json({
-     status: 'OK',
-     timestamp: new Date().toISOString(),
-     uptime: process.uptime(),
-     platform: 'Local',
-     ffmpeg: 'Available'
-   });
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    platform: 'Vercel',
+    features: ['Direct Audio Download', 'No FFmpeg Required']
+  });
 });
 
 // Routes
 app.get('/', (req, res) => {
-     res.json({
-     message: 'Ecoquerai YouTube Video to MP3 API',
-     version: '1.2.0',
-     author: 'Matias Troncoso Campos',
-     organization: 'Ecoquerai Team',
-     platform: 'Local',
-     features: ['FFmpeg Support', 'Real MP3 Conversion', 'Persistent Storage'],
+  res.json({
+    message: 'Ecoquerai YouTube Video to MP3 API',
+    version: '1.2.0',
+    author: 'Matias Troncoso Campos',
+    organization: 'Ecoquerai Team',
+    platform: 'Vercel',
+    features: ['Direct Audio Download', 'Fast Processing', 'No Conversion Required'],
     social: {
       ecoquerai: 'https://www.instagram.com/ecoquerai/',
       saitam_jk: 'https://www.instagram.com/saitam_jk/'
@@ -59,7 +58,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Convert YouTube URL to MP3
+// Convert YouTube URL to Audio (direct download)
 app.post('/convert', async (req, res) => {
   try {
     const { url, quality = 'highestaudio' } = req.body;
@@ -95,30 +94,33 @@ app.post('/convert', async (req, res) => {
     const videoTitle = videoInfo.videoDetails.title.replace(/[^\w\s-]/g, '');
     const videoId = videoInfo.videoDetails.videoId;
     
-    // Generate unique filename
-    const timestamp = Date.now();
-    const filename = `${videoTitle}_${timestamp}.mp3`;
-    const outputPath = path.join(downloadsDir, filename);
+    // Get the best audio format available
+    const formats = ytdl.filterFormats(videoInfo.formats, 'audioonly');
+    const bestFormat = formats[0];
 
-    console.log(`Starting conversion for: ${videoTitle} (ID: ${videoId})`);
-
-    // Download video with audio only
-    let videoStream;
-    try {
-      videoStream = ytdl(url, {
-        quality: quality,
-        filter: 'audioonly'
-      });
-    } catch (streamError) {
-      console.error('Error creating video stream:', streamError);
-      return res.status(500).json({ 
-        error: 'Could not create video stream. The video might be restricted.',
-        details: streamError.message 
-      });
+    if (!bestFormat) {
+      return res.status(500).json({ error: 'No audio format available for this video' });
     }
 
+    // Generate unique filename with original extension
+    const timestamp = Date.now();
+    const extension = bestFormat.container || 'm4a';
+    const filename = `${videoTitle}_${timestamp}.${extension}`;
+    const outputPath = path.join(downloadsDir, filename);
+
+    console.log(`Starting download for: ${videoTitle} (ID: ${videoId})`);
+
+    // Create download stream
+    const stream = ytdl(url, {
+      quality: quality,
+      filter: 'audioonly'
+    });
+
+    // Create write stream
+    const writeStream = fs.createWriteStream(outputPath);
+
     // Handle stream errors
-    videoStream.on('error', (streamError) => {
+    stream.on('error', (streamError) => {
       console.error('Video stream error:', streamError);
       if (!res.headersSent) {
         res.status(500).json({ 
@@ -128,67 +130,55 @@ app.post('/convert', async (req, res) => {
       }
     });
 
-    // Convert to MP3 using ffmpeg
-    ffmpeg(videoStream)
-      .audioCodec('libmp3lame')
-      .audioBitrate(192)
-      .on('start', (commandLine) => {
-        console.log('FFmpeg started:', commandLine);
-      })
-      .on('progress', (progress) => {
-        if (progress.percent) {
-          console.log('Processing: ' + progress.percent + '% done');
-        }
-      })
-             .on('error', (err) => {
-         console.error('FFmpeg error:', err);
-         if (!res.headersSent) {
-           res.status(500).json({ 
-             error: 'Audio conversion failed', 
-             details: err.message 
-           });
-         }
-       })
-      .on('end', () => {
-        console.log('Conversion completed successfully');
-        
-        // Get file stats
-        const stats = fs.statSync(outputPath);
-        const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
-        
-                 // Get quality information
-         const formats = ytdl.filterFormats(videoInfo.formats, 'audioonly');
-         const bestFormat = formats[0];
-         const quality = bestFormat ? `${bestFormat.audioBitrate || 'Unknown'}kbps` : 'Unknown';
-         
-         res.json({
-           success: true,
-           message: 'Video converted to MP3 successfully',
-           filename: filename,
-           downloadUrl: `/downloads/${filename}`,
-           videoTitle: videoTitle,
-           duration: videoInfo.videoDetails.lengthSeconds,
-           fileSize: `${fileSizeInMB} MB`,
-           quality: quality,
-           platform: 'Local',
-           conversion: 'Real MP3 with FFmpeg'
-         });
-      })
-      .save(outputPath);
+    writeStream.on('error', (writeError) => {
+      console.error('Write stream error:', writeError);
+      if (!res.headersSent) {
+        res.status(500).json({ 
+          error: 'Error writing file',
+          details: writeError.message 
+        });
+      }
+    });
+
+    // Pipe the stream to file
+    stream.pipe(writeStream);
+
+    writeStream.on('finish', () => {
+      console.log('Download completed successfully');
+      
+      // Get file stats
+      const stats = fs.statSync(outputPath);
+      const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
+
+      res.json({
+        success: true,
+        message: 'Video downloaded successfully',
+        filename: filename,
+        downloadUrl: `/downloads/${filename}`,
+        videoTitle: videoTitle,
+        duration: videoInfo.videoDetails.lengthSeconds,
+        fileSize: `${fileSizeInMB} MB`,
+        format: bestFormat.container || 'audio',
+        quality: bestFormat.audioBitrate ? `${bestFormat.audioBitrate}kbps` : 'Unknown',
+        platform: 'Vercel',
+        note: 'Direct audio download - no conversion required'
+      });
+    });
 
   } catch (error) {
     console.error('Unexpected error:', error);
-    res.status(500).json({ 
-      error: 'Unexpected server error', 
-      details: error.message 
-    });
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Unexpected server error', 
+        details: error.message 
+      });
+    }
   }
 });
 
 // Get conversion status (for future async processing)
 app.get('/status/:id', (req, res) => {
   const { id } = req.params;
-  // This could be implemented with a job queue system
   res.json({ status: 'completed', id });
 });
 
@@ -249,11 +239,11 @@ app.use('*', (req, res) => {
 });
 
 // Start server
- app.listen(PORT, () => {
-   console.log(`🚀 Ecoquerai YouTube to MP3 running on Local - Port ${PORT}`);
-   console.log(`📁 Downloads directory: ${downloadsDir}`);
-   console.log(`📁 Temp directory: ${tempDir}`);
-   console.log(`🔧 Platform: Local with FFmpeg support`);
- });
+app.listen(PORT, () => {
+  console.log(`🚀 Ecoquerai YouTube to MP3 running on Vercel - Port ${PORT}`);
+  console.log(`📁 Downloads directory: ${downloadsDir}`);
+  console.log(`📁 Temp directory: ${tempDir}`);
+  console.log(`🔧 Platform: Vercel - Direct Audio Download`);
+});
 
 module.exports = app;
