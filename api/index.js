@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const ytdl = require('@distube/ytdl-core');
+const ytdl = require('ytdl-core');
 const fs = require('fs-extra');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -32,6 +32,96 @@ app.get('/api/health', (req, res) => {
     ytdl: 'Available',
     note: 'API is running correctly'
   });
+});
+
+// Advanced diagnostic endpoint
+app.post('/api/diagnose', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+    
+    const results = {
+      url: url,
+      timestamp: new Date().toISOString(),
+      tests: {}
+    };
+    
+    // Test 1: URL Validation
+    try {
+      results.tests.urlValidation = {
+        isValid: ytdl.validateURL(url),
+        message: ytdl.validateURL(url) ? 'URL is valid' : 'URL is invalid'
+      };
+    } catch (error) {
+      results.tests.urlValidation = {
+        isValid: false,
+        error: error.message
+      };
+    }
+    
+    // Test 2: Basic Info (without headers)
+    try {
+      const basicInfo = await ytdl.getInfo(url);
+      results.tests.basicInfo = {
+        success: true,
+        title: basicInfo.videoDetails?.title || 'Unknown',
+        duration: basicInfo.videoDetails?.lengthSeconds || 'Unknown',
+        formats: basicInfo.formats?.length || 0
+      };
+    } catch (error) {
+      results.tests.basicInfo = {
+        success: false,
+        error: error.message
+      };
+    }
+    
+    // Test 3: Info with headers
+    try {
+      const infoWithHeaders = await ytdl.getInfo(url, {
+        requestOptions: {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        }
+      });
+      results.tests.infoWithHeaders = {
+        success: true,
+        title: infoWithHeaders.videoDetails?.title || 'Unknown'
+      };
+    } catch (error) {
+      results.tests.infoWithHeaders = {
+        success: false,
+        error: error.message
+      };
+    }
+    
+    // Test 4: Available formats
+    try {
+      const info = await ytdl.getInfo(url);
+      const audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
+      results.tests.audioFormats = {
+        success: true,
+        count: audioFormats.length,
+        formats: audioFormats.map(f => ({
+          container: f.container,
+          audioBitrate: f.audioBitrate,
+          quality: f.quality
+        }))
+      };
+    } catch (error) {
+      results.tests.audioFormats = {
+        success: false,
+        error: error.message
+      };
+    }
+    
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: 'Diagnosis failed', details: error.message });
+  }
 });
 
 // Test endpoint for YouTube URL validation
@@ -93,42 +183,44 @@ app.post('/api/convert', async (req, res) => {
 
     console.log(`Processing URL: ${url}`);
 
-    // Get video info with better error handling and headers
+    // Get video info with simplified approach
     let videoInfo;
     try {
-      videoInfo = await ytdl.getInfo(url, {
-        requestOptions: {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'DNT': '1',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1'
-          }
-        }
-      });
+      videoInfo = await ytdl.getInfo(url);
     } catch (infoError) {
       console.error('Error getting video info:', infoError);
       
-      // Provide more specific error messages
-      let errorMessage = 'Could not fetch video information.';
-      if (infoError.message.includes('Video unavailable')) {
-        errorMessage = 'This video is unavailable or private.';
-      } else if (infoError.message.includes('Sign in')) {
-        errorMessage = 'This video requires authentication.';
-      } else if (infoError.message.includes('restricted')) {
-        errorMessage = 'This video is restricted in your region.';
-      } else if (infoError.message.includes('copyright')) {
-        errorMessage = 'This video has copyright restrictions.';
+      // Try with minimal headers
+      try {
+        videoInfo = await ytdl.getInfo(url, {
+          requestOptions: {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          }
+        });
+      } catch (retryError) {
+        console.error('Retry failed:', retryError);
+        
+        // Provide specific error messages
+        let errorMessage = 'Could not fetch video information.';
+        if (infoError.message.includes('Video unavailable')) {
+          errorMessage = 'This video is unavailable or private.';
+        } else if (infoError.message.includes('Sign in')) {
+          errorMessage = 'This video requires authentication.';
+        } else if (infoError.message.includes('restricted')) {
+          errorMessage = 'This video is restricted in your region.';
+        } else if (infoError.message.includes('copyright')) {
+          errorMessage = 'This video has copyright restrictions.';
+        }
+        
+        return res.status(400).json({ 
+          error: errorMessage,
+          details: infoError.message,
+          retryError: retryError.message,
+          suggestion: 'Try a different YouTube video or check if the video is publicly available.'
+        });
       }
-      
-      return res.status(400).json({ 
-        error: errorMessage,
-        details: infoError.message,
-        suggestion: 'Try a different YouTube video or check if the video is publicly available.'
-      });
     }
 
     // Check if video is available
