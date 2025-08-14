@@ -3,7 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecoquerai YouTube Video to MP3</title>
+    <title>🎵 Convertir YouTube a MP3 GRATIS | Ecoquerai - Descarga Audio Online</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Convierte videos de YouTube a MP3 GRATIS. Descarga audio de YouTube online sin registro. Herramienta gratuita para extraer audio de videos. ✅ 100% Gratuito ✅ Sin Registro ✅ Sin Límites">
+    <meta name="keywords" content="youtube a mp3, convertir youtube, descargar audio youtube, youtube to mp3 gratis, descargar musica youtube, extraer audio youtube, converter youtube, mp3 downloader, youtube audio downloader, gratis">
+    <meta name="author" content="Matias Troncoso Campos - Ecoquerai Team">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Spanish">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ecoquerai-youtube-mp3.vercel.app/">
+    <meta property="og:title" content="🎵 Convertir YouTube a MP3 GRATIS | Ecoquerai">
+    <meta property="og:description" content="Convierte videos de YouTube a MP3 GRATIS. Descarga audio online sin registro. Herramienta gratuita para extraer audio de videos.">
+    <meta property="og:image" content="https://ecoquerai-youtube-mp3.vercel.app/logo_ecoquerai.png">
+    <meta property="og:site_name" content="Ecoquerai YouTube to MP3">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ecoquerai-youtube-mp3.vercel.app/">
+    <meta property="twitter:title" content="🎵 Convertir YouTube a MP3 GRATIS | Ecoquerai">
+    <meta property="twitter:description" content="Convierte videos de YouTube a MP3 GRATIS. Descarga audio online sin registro.">
+    <meta property="twitter:image" content="https://ecoquerai-youtube-mp3.vercel.app/logo_ecoquerai.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://ecoquerai-youtube-mp3.vercel.app/">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logo_ecoquerai.png">
+    <link rel="apple-touch-icon" href="/logo_ecoquerai.png">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Ecoquerai YouTube to MP3 Converter",
+      "description": "Convierte videos de YouTube a MP3 GRATIS. Descarga audio online sin registro.",
+      "url": "https://ecoquerai-youtube-mp3.vercel.app/",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Matias Troncoso Campos",
+        "url": "https://www.instagram.com/saitam_jk/"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Ecoquerai Team",
+        "url": "https://www.instagram.com/ecoquerai/"
+      }
+    }
+    </script>
     <style>
         * {
             margin: 0;
@@ -50,6 +108,25 @@
             color: #666;
             font-size: 1.2em;
             margin-bottom: 15px;
+        }
+
+        .free-badge {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin: 10px auto;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
 
         .logo {
@@ -268,14 +345,41 @@
             color: #666;
             line-height: 1.6;
         }
+
+        .features {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+        }
+
+        .features h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features li {
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 5px;
+            padding-left: 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <img src="/logo_ecoquerai.png" alt="Ecoquerai Logo" class="logo">
-            <h1>Ecoquerai YouTube Video to MP3</h1>
-            <p>Convierte videos de YouTube a formato MP3 de manera rápida y fácil</p>
+            <h1>🎵 Convertir YouTube a MP3 GRATIS</h1>
+            <p>Descarga audio de YouTube online sin registro - 100% GRATUITO</p>
+            <div class="free-badge">✅ TOTALMENTE GRATIS</div>
             
             <div class="author-info">
                 <div class="author-name">👨‍💻 Desarrollado por Matias Troncoso Campos</div>
@@ -332,12 +436,24 @@
         <div class="status" id="status"></div>
 
         <div class="info">
-            <h3>📋 Instrucciones:</h3>
-            <p>1. Pega la URL del video de YouTube que quieres convertir</p>
-            <p>2. Selecciona la calidad de audio deseada</p>
-            <p>3. Haz clic en "Convertir a MP3"</p>
-            <p>4. Espera a que se complete la conversión</p>
-            <p>5. Descarga tu archivo MP3</p>
+            <h3>📋 Cómo convertir YouTube a MP3 GRATIS:</h3>
+            <p>1. 📋 Pega la URL del video de YouTube que quieres convertir</p>
+            <p>2. 🎵 Selecciona la calidad de audio deseada (Alta o Baja)</p>
+            <p>3. ⚡ Haz clic en "Convertir a MP3" (Proceso automático)</p>
+            <p>4. ⏳ Espera a que se complete la conversión (solo segundos)</p>
+            <p>5. 📥 Descarga tu archivo MP3 GRATIS</p>
+            
+            <div class="features">
+                <h4>✨ Características:</h4>
+                <ul>
+                    <li>✅ 100% GRATUITO - Sin costos ocultos</li>
+                    <li>🚀 Sin registro - Usa inmediatamente</li>
+                    <li>🔒 Privado - No guardamos tus archivos</li>
+                    <li>⚡ Rápido - Conversión en segundos</li>
+                    <li>📱 Compatible - Funciona en móvil y PC</li>
+                    <li>🎵 Alta calidad - Múltiples formatos de audio</li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -377,29 +493,31 @@
             convertBtn.textContent = '🔄 Convirtiendo...';
             showStatus('Iniciando conversión...', 'loading');
 
-            try {
-                const response = await fetch('/convert', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        url: url,
-                        quality: selectedQuality
-                    })
-                });
+                         try {
+                 const response = await fetch('/convert', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                     },
+                     body: JSON.stringify({
+                         url: url,
+                         quality: selectedQuality
+                     })
+                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    showStatus(`
-                        ✅ ${data.message}<br>
-                        <strong>Título:</strong> ${data.videoTitle}<br>
-                        <strong>Duración:</strong> ${Math.floor(data.duration / 60)}:${(data.duration % 60).toString().padStart(2, '0')}<br>
-                        <a href="${data.downloadUrl}" class="download-link" download>
-                            📥 Descargar MP3
-                        </a>
-                    `, 'success');
+                                         showStatus(`
+                         ✅ ${data.message}<br>
+                         <strong>Título:</strong> ${data.videoTitle}<br>
+                         <strong>Duración:</strong> ${Math.floor(data.duration / 60)}:${(data.duration % 60).toString().padStart(2, '0')}<br>
+                         <strong>Tamaño:</strong> ${data.fileSize}<br>
+                         <strong>Calidad:</strong> ${data.quality}<br>
+                         <a href="${data.downloadUrl}" class="download-link" download>
+                             📥 Descargar Audio
+                         </a>
+                     `, 'success');
                 } else {
                     showStatus(`❌ Error: ${data.error}`, 'error');
                 }

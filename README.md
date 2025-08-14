@@ -1,6 +1,17 @@
-# Ecoquerai YouTube Video to MP3
+# 🎵 Ecoquerai YouTube to MP3 - Convertidor GRATUITO
 
-Un servicio web para convertir videos de YouTube a formato MP3 usando Node.js, desarrollado por **Matias Troncoso Campos** del equipo **Ecoquerai**.
+**Convierte videos de YouTube a MP3 GRATIS** - Descarga audio de YouTube online sin registro. Herramienta gratuita para extraer audio de videos desarrollada por **Matias Troncoso Campos** del equipo **Ecoquerai**.
+
+## ✨ Características Principales
+
+- ✅ **100% GRATUITO** - Sin costos ocultos
+- 🚀 **Sin registro** - Usa inmediatamente
+- 🔒 **Privado** - No guardamos tus archivos
+- ⚡ **Rápido** - Conversión en segundos
+- 📱 **Compatible** - Funciona en móvil y PC
+- 🎵 **Alta calidad** - Múltiples formatos de audio
+- 🔧 **FFmpeg** - Conversión real a MP3
+- 🌐 **SEO Optimizado** - Mejor posicionamiento en Google
 
 ## 🚀 Características
 

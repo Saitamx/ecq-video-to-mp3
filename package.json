@@ -4,10 +4,11 @@
   "description": "YouTube video to MP3 audio extractor",
   "main": "index.js",
   "scripts": {
-    "start": "node start.js",
-    "dev": "nodemon start.js",
+    "start": "node railway-server.js",
+    "dev": "nodemon railway-server.js",
     "test": "node test.js",
-    "test-api": "node test-api.js"
+    "test-api": "node test-api.js",
+    "vercel": "node api/index.js"
   },
   "keywords": [
     "youtube",
@@ -24,7 +25,6 @@
     "express": "^4.18.2",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^11.1.1",
-    "multer": "^1.4.5-lts.1",
     "node-fetch": "^2.7.0",
     "uuid": "^9.0.1"
   },
@@ -32,6 +32,6 @@
     "nodemon": "^3.0.1"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": "20.x"
   }
 }
