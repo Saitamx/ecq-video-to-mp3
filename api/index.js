@@ -95,27 +95,71 @@ app.post('/api/convert', async (req, res) => {
 
     console.log(`Starting conversion for: ${videoTitle} (ID: ${videoId})`);
 
-    // Download video with audio only
-    let videoStream;
-    try {
-      videoStream = ytdl(url, {
-        quality: quality,
-        filter: 'audioonly'
-      });
-    } catch (streamError) {
-      console.error('Error creating video stream:', streamError);
-      return res.status(500).json({ 
-        error: 'Could not create video stream. The video might be restricted.',
-        details: streamError.message 
-      });
+    // Get the best audio format available
+    const formats = ytdl.filterFormats(videoInfo.formats, 'audioonly');
+    const bestFormat = formats[0];
+
+    if (!bestFormat) {
+      return res.status(500).json({ error: 'No audio format available for this video' });
     }
 
+    // Generate unique filename with original extension
+    const extension = bestFormat.container || 'm4a';
+    const filename = `${videoTitle}_${timestamp}.${extension}`;
+    const outputPath = path.join(downloadsDir, filename);
+
+    // Create download stream
+    const stream = ytdl(url, {
+      quality: quality,
+      filter: 'audioonly'
+    });
+
+    // Create write stream
+    const writeStream = fs.createWriteStream(outputPath);
+
     // Handle stream errors
-    videoStream.on('error', (streamError) => {
+    stream.on('error', (streamError) => {
       console.error('Video stream error:', streamError);
-      res.status(500).json({ 
-        error: 'Error downloading video stream',
-        details: streamError.message 
+      if (!res.headersSent) {
+        res.status(500).json({ 
+          error: 'Error downloading video stream',
+          details: streamError.message 
+        });
+      }
+    });
+
+    writeStream.on('error', (writeError) => {
+      console.error('Write stream error:', writeError);
+      if (!res.headersSent) {
+        res.status(500).json({ 
+          error: 'Error writing file',
+          details: writeError.message 
+        });
+      }
+    });
+
+    // Pipe the stream to file
+    stream.pipe(writeStream);
+
+    writeStream.on('finish', () => {
+      console.log('Download completed successfully');
+      
+      // Get file stats
+      const stats = fs.statSync(outputPath);
+      const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
+
+      res.json({
+        success: true,
+        message: 'Video downloaded successfully',
+        filename: filename,
+        downloadUrl: `/api/download/${filename}`,
+        videoTitle: videoTitle,
+        duration: videoInfo.videoDetails.lengthSeconds,
+        fileSize: `${fileSizeInMB} MB`,
+        format: bestFormat.container || 'audio',
+        quality: bestFormat.audioBitrate ? `${bestFormat.audioBitrate}kbps` : 'Unknown',
+        platform: 'Vercel',
+        note: 'Direct audio download - no conversion required'
       });
     });
 
